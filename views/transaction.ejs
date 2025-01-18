@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <title>Transaction Form</title>
+    <style>
+      /* Ensures the table maintains its full size and scrolls horizontally on smaller screens */
+      .table-responsive {
+        overflow-x: auto;
+      }
+
+      /* Adjust column widths for better readability */
+      th, td {
+        white-space: nowrap;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      .col-small {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .col-medium {
+        max-width: 150px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-4">
+      <h2>Transaction Form</h2>
+      <form action="/add-transaction" method="POST" id="transactionForm">
+        <div class="row">
+          <div class="col-md-4">
+            <label for="JamaOrNave" class="form-label">Credit/Debit</label>
+            <select name="JamaOrNave" id="JamaOrNave" class="form-select">
+              <option value="Jama">Jama</option>
+              <option value="Nave">Nave</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="date" class="form-label">Date</label>
+            <input
+              type="date"
+              id="date"
+              name="date"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="transactionType" class="form-label">Transaction Type</label>
+            <select
+              name="transactionType"
+              id="transactionType"
+              class="form-select"
+            >
+              <option value="Cash">Cash</option>
+              <option value="Online">Online</option>
+            </select>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <label for="customerName" class="form-label">Customer Name</label>
+            <input
+              type="text"
+              id="customerName"
+              name="customerName"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="itemName" class="form-label">Item Name</label>
+            <select name="itemName" id="itemName" class="form-select">
+              <option value="Mutri">Mutri</option>
+              <option value="AP">AP</option>
+              <option value="Cow">Cow</option>
+              <option value="Ghanti">Ghanti</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="netWeight" class="form-label">Net Weight</label>
+            <input
+              type="number"
+              id="netWeight"
+              name="netWeight"
+              class="form-control"
+              required
+            />
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <label for="touch" class="form-label">Touch</label>
+            <input
+              type="number"
+              id="touch"
+              name="touch"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="wastage" class="form-label">Wastage</label>
+            <input
+              type="number"
+              id="wastage"
+              name="wastage"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="mc" class="form-label">MC%</label>
+            <input
+              type="number"
+              id="mc"
+              name="mc"
+              class="form-control"
+              required
+              min="0"
+              step="0.01"
+            />
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <label for="rate" class="form-label">Rate</label>
+            <input
+              type="number"
+              id="rate"
+              name="rate"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="amount" class="form-label">Amount</label>
+            <input
+              type="number"
+              id="amount"
+              name="amount"
+              class="form-control"
+              readonly
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="fine" class="form-label">Fine</label>
+            <input
+              type="number"
+              id="fine"
+              name="fine"
+              class="form-control"
+              readonly
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="tmc" class="form-label">TMC</label>
+            <input
+              type="number"
+              id="tmc"
+              name="tmc"
+              class="form-control"
+              required
+            />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Add Transaction</button>
+      </form>
+
+      <h3 class="mt-5">Transaction List</h3>
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th class="col-small">Jama/Nave</th>
+              <th class="col-medium">Date</th>
+              <th class="col-medium">Transaction Type</th>
+              <th class="col-medium">Customer Name</th>
+              <th class="col-small">Item Name</th>
+              <th class="col-small">Net Weight</th>
+              <th class="col-small">Touch</th>
+              <th class="col-small">Wastage</th>
+              <th class="col-small">MC%</th>
+              <th class="col-small">Rate</th>
+              <th class="col-small">Amount</th>
+              <th class="col-small">Fine</th>
+              <th class="col-small">TMC</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% transactions.forEach(transaction => { %>
+            <tr>
+              <td class="col-small"><%= transaction.JamaOrNave %></td>
+              <td class="col-medium"><%= new Date(transaction.date).toLocaleDateString('en-GB') %></td>
+              <td class="col-medium"><%= transaction.transactionType %></td>
+              <td class="col-medium"><%= transaction.customerName %></td>
+              <td class="col-small"><%= transaction.itemName %></td>
+              <td class="col-small"><%= transaction.netWeight %></td>
+              <td class="col-small"><%= transaction.touch %></td>
+              <td class="col-small"><%= transaction.wastage %></td>
+              <td class="col-small"><%= transaction.mc %></td>
+              <td class="col-small"><%= transaction.rate %></td>
+              <td class="col-small"><%= transaction.amount %></td>
+              <td class="col-small"><%= transaction.fine %></td>
+              <td class="col-small"><%= transaction.tmc %></td>
+              <td>
+                <button type="button" class="btn btn-primary btn-sm edit-btn">Edit</button>
+                <button type="button" class="btn btn-success btn-sm save-btn" style="display: none">Save</button>
+                <form action="/delete-transaction/<%= transaction.id %>" method="POST" style="display: inline">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("transactionForm")
+        .addEventListener("input", () => {
+          const netWeight =
+            parseFloat(document.getElementById("netWeight").value) || 0;
+          const touch = parseFloat(document.getElementById("touch").value) || 0;
+          const wastage =
+            parseFloat(document.getElementById("wastage").value) || 0;
+          const mc = parseFloat(document.getElementById("mc").value) || 0;
+
+          const fine = (netWeight * (touch + wastage)) / 100;
+          const amount = netWeight * mc;
+
+          document.getElementById("fine").value = fine.toFixed(2);
+          document.getElementById("amount").value = amount.toFixed(2);
+        });
+
+      document.addEventListener("click", (event) => {
+        if (event.target.classList.contains("edit-btn")) {
+          const row = event.target.closest("tr");
+          toggleEditMode(row, true);
+        } else if (event.target.classList.contains("save-btn")) {
+          const row = event.target.closest("tr");
+          saveRowData(row);
+        }
+      });
+
+      function toggleEditMode(row, isEditing) {
+        const inputs = row.querySelectorAll("input");
+        const editBtn = row.querySelector(".edit-btn");
+        const saveBtn = row.querySelector(".save-btn");
+
+        inputs.forEach((input) => {
+          input.readOnly = !isEditing;
+        });
+
+        editBtn.style.display = isEditing ? "none" : "inline-block";
+        saveBtn.style.display = isEditing ? "inline-block" : "none";
+      }
+
+      function saveRowData(row) {
+        const id = row.querySelector("form").action.split("/").pop();
+        const inputs = row.querySelectorAll("input");
+        const data = {};
+
+        inputs.forEach((input) => {
+          data[input.name] = input.value;
+        });
+
+        fetch(`/edit-transaction/${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to update transaction");
+            }
+            toggleEditMode(row, false);
+          })
+          .catch((error) => console.error(error));
+      }
+    </script>
+  </body>
+</html>

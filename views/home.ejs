@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jewelry Shop Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>  
+      body {
+        margin: 0;
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(to bottom, #ffffff, #f4f4f4);
+        overflow-x: hidden;
+      }
+
+      .sidebar {
+        height: 100vh;
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: -250px; /* Hidden by default */
+        background: linear-gradient(to bottom, #333, #222);
+        padding-top: 20px;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        transition: left 0.3s ease-in-out;
+        z-index: 1000;
+      }
+
+      .sidebar.visible {
+        left: 0; /* Slide in when visible */
+      }
+
+      .sidebar h3 {
+        color: #ffd700;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .sidebar a {
+        padding: 12px 15px;
+        text-decoration: none;
+        font-size: 18px;
+        color: #fff;
+        display: block;
+        transition: background-color 0.3s, transform 0.3s;
+      }
+
+      .sidebar a:hover {
+        background-color: #ffd700;
+        color: #222;
+        transform: scale(1.05);
+      }
+
+      .hamburger {
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1100;
+        background: #ffd700;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+      }
+
+      .hamburger span {
+        display: block;
+        width: 25px;
+        height: 3px;
+        background: #222;
+        margin: 5px 0;
+      }
+
+      .main-content {
+        margin-left: 250px;
+        padding: 20px;
+        background-color: #fff;
+        min-height: 100vh;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        transition: margin-left 0.3s ease-in-out;
+      }
+
+      .main-content.collapsed {
+        margin-left: 0;
+      }
+
+      @media (max-width: 1024px) {
+        .sidebar {
+          left: -250px; /* Hide sidebar for screens <= 1024px */
+        }
+
+        .sidebar.visible {
+          left: 0;
+        }
+
+        .hamburger {
+          display: block;
+        }
+
+        .main-content {
+          margin-left: 0;
+        }
+
+        .main-content.overlay {
+          position: relative;
+          z-index: 900;
+        }
+      }
+
+      @media (min-width: 1025px) {
+        .sidebar {
+          left: 0; /* Show full sidebar for laptops and larger screens */
+        }
+
+        .hamburger {
+          display: none; /* Hide the hamburger menu on laptops */
+        }
+
+        .main-content {
+          margin-left: 250px; /* Ensure content is aligned properly */
+        }
+      }
+
+      .login-logout-container {
+        position: absolute;
+        bottom: 20px;
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        background-color: rgba(255, 215, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Hamburger Menu Button -->
+    <button class="hamburger" id="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <h3 class="mb-4">Dashboard</h3>
+      <a href="/generate-bill">Bill</a>
+      <a href="/customer">Customer</a>
+      <a href="/items">Add Items</a>
+      <a href="/add-transaction">Transaction</a>
+
+      <!-- Login/Logout Buttons -->
+      <div class="login-logout-container">
+        <a
+          href="/login"
+          id="login-btn"
+          class="btn btn-primary"
+          style="margin-bottom: 10px"
+          >Login</a
+        >
+        <a
+          href="/logout"
+          id="logout-btn"
+          class="btn btn-danger"
+          style="display: none"
+          >Logout</a
+        >
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content mt-5" id="main-content">
+      <br>
+      <h1>Welcome to the Jewelry Shop Dashboard</h1>
+      <p>Select an option from the sidebar to get started.</p>
+
+      <!-- Example Card Section -->
+      <div class="card">
+        <div class="card-header">Quick Overview</div>
+        <div class="card-body">
+          <p>Here you can manage your jewelry transactions efficiently.</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const sidebar = document.getElementById("sidebar");
+        const hamburger = document.getElementById("hamburger");
+        const mainContent = document.getElementById("main-content");
+
+        // Toggle Sidebar Visibility
+        hamburger.addEventListener("click", () => {
+          const isVisible = sidebar.classList.toggle("visible");
+          if (isVisible) {
+            mainContent.classList.add("overlay");
+          } else {
+            mainContent.classList.remove("overlay");
+          }
+        });
+
+        // Simulated login state. Replace with server-side logic.
+        const isLoggedIn = true; // Change this to `false` for testing.
+        const loginBtn = document.getElementById("login-btn");
+        const logoutBtn = document.getElementById("logout-btn");
+
+        if (isLoggedIn) {
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+        } else {
+          loginBtn.style.display = "inline-block";
+          logoutBtn.style.display = "none";
+        }
+      });
+    </script>
+  </body>
+</html>

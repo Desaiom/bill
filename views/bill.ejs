@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bill Creator</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <style>
+    /* Media Query for smaller devices like mobile */
+    @media (max-width: 768px) {
+      table {
+        font-size: 12px; /* Adjust font size for smaller screens */
+      }
+
+      table th,
+      table td {
+        padding: 8px; /* Reduce padding for smaller screens */
+      }
+
+      /* Adjust table layout for mobile to make it more compact */
+      table th,
+      table td {
+        white-space: nowrap; /* Prevent text from wrapping in table cells */
+        overflow: hidden; /* Hide overflow text */
+        text-overflow: ellipsis; /* Add ellipsis for overflow text */
+      }
+
+      .container {
+        padding: 10px; /* Adjust container padding */
+      }
+
+      /* Adjust the form elements to fit better on small screens */
+      .form-control {
+        font-size: 12px; /* Smaller font size for input fields */
+        padding: 8px; /* Reduced padding */
+      }
+
+      /* Adjust button size for mobile */
+      .btn {
+        font-size: 14px; /* Smaller button text */
+        padding: 8px 15px; /* Smaller button padding */
+      }
+
+      /* Adjust the total and fine balance section for small screens */
+      .mt-3 p {
+        font-size: 14px; /* Smaller font size for total and fine balance */
+      }
+    }
+
+    /* Media Query for very small devices (extra small) */
+    @media (max-width: 480px) {
+      table {
+        font-size: 10px; /* Further reduce font size on very small screens */
+      }
+
+      .form-control {
+        font-size: 10px; /* Further reduce font size for input fields */
+        padding: 6px; /* Smaller padding */
+      }
+
+      .btn {
+        font-size: 12px; /* Reduce font size of button */
+        padding: 6px 12px; /* Smaller button padding */
+      }
+    }
+  </style>
+  <body>
+    <div class="container mt-4">
+      <h3 class="mb-4 text-center">Bill Creator</h3>
+      <form action="/generate-bill" method="POST" id="billForm">
+        <div style="overflow-x: auto;">
+          <table class="table table-bordered  table-striped  text-center" style="min-width: 1000px;">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Net</th>
+                <th>%</th>
+                <th>Wastage</th>
+                <th>Fine</th>
+                <th>Mc@</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (items.length > 0) { %> 
+              <% items.forEach((item, index) => { %>
+              <tr>
+                <td>
+                  <input
+                    type="text"
+                    name="items[<%= index %>][description]"
+                    value="<%= item.description %>"
+                    class="form-control"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="items[<%= index %>][net]"
+                    value="<%= item.net %>"
+                    class="form-control"
+                    onchange="calculateTotal()"
+                    id="net-<%= index %>"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="items[<%= index %>][percentage]"
+                    value="<%= item.percentage %>"
+                    class="form-control"
+                    onchange="calculateTotal()"
+                    id="percentage-<%= index %>"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="items[<%= index %>][wastage]"
+                    value="<%= item.wastage %>"
+                    class="form-control"
+                    onchange="calculateTotal()"
+                    id="wastage-<%= index %>"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="items[<%= index %>][fine]"
+                    value="<%= item.fine.toFixed(2) %>"
+                    class="form-control"
+                    readonly
+                    id="fine-<%= index %>"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    step="0.001"
+                    name="items[<%= index %>][mcRate]"
+                    value="<%= item.mcRate %>"
+                    class="form-control"
+                    onchange="calculateTotal()"
+                    id="mcRate-<%= index %>"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="items[<%= index %>][amount]"
+                    value="<%= item.amount.toFixed(2) %>"
+                    class="form-control"
+                    readonly
+                    id="amount-<%= index %>"
+                  />
+                </td>
+              </tr>
+              <% }) %>
+              <tr id="total-row">
+                <td><strong>Total</strong></td>
+                <td><strong><%= totalNet.toFixed(2) %></strong></td>
+                <td>-</td>
+                <td>-</td>
+                <td><strong><%= totalFine.toFixed(2) %></strong></td>
+                <td>-</td>
+                <td><strong><%= totalAmount.toFixed(2) %></strong></td>
+              </tr>
+              <% } else { %>
+              <tr>
+                <td colspan="7">No items to display</td>
+              </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-3">
+          <p>
+            <strong>Total Amount (Amt): </strong> <span id="totalAmountDisplay"
+              ><%= totalAmount.toFixed(2) %></span
+            >
+          </p>
+          <p>
+            <strong>Fine Balance: </strong> <span id="fineBalanceDisplay"
+              ><%= totalFine.toFixed(2) %></span
+            >
+          </p>
+        </div>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          onclick="updateFineBalance()"
+        >
+          Download as PDF
+        </button>
+      </form>
+    </div>
+    
+
+    <script>
+      function calculateTotal() {
+        let totalNet = 0;
+        let totalFine = 0;
+        let totalAmount = 0;
+
+        // Loop over all rows and calculate fine and amount
+        document.querySelectorAll("tr").forEach((row, index) => {
+          if (
+            index !== 0 &&
+            index !== document.querySelectorAll("tr").length - 1
+          ) {
+            // Skip header and total row
+            const net = parseFloat(
+              document.getElementById(`net-${index - 1}`).value
+            );
+            const percentage = parseFloat(
+              document.getElementById(`percentage-${index - 1}`).value
+            );
+            const wastage = parseFloat(
+              document.getElementById(`wastage-${index - 1}`).value
+            );
+            const mcRate = parseFloat(
+              document.getElementById(`mcRate-${index - 1}`).value
+            );
+
+            // Fine formula: Net × (Percentage + Wastage) / 100
+            const fine = net * ((percentage + wastage) / 100);
+            document.getElementById(`fine-${index - 1}`).value =
+              Math.round(fine * 100) / 100; // Round to nearest 2 decimal places
+
+            // Amount formula: Net × Mc@
+            const amount = net * mcRate;
+            document.getElementById(`amount-${index - 1}`).value =
+              Math.round(amount * 100) / 100; // Round to nearest 2 decimal places
+
+            // Add to totals
+            totalNet += net;
+            totalFine += fine;
+            totalAmount += amount;
+          }
+        });
+
+        // Update the total row
+        document.querySelector("#total-row td:nth-child(2)").textContent =
+          totalNet.toFixed(2);
+        document.querySelector("#total-row td:nth-child(5)").textContent =
+          totalFine.toFixed(2);
+        document.querySelector("#total-row td:nth-child(7)").textContent =
+          totalAmount.toFixed(2);
+
+        // Update the footer totals as well
+        document.querySelector(
+          "#totalAmountDisplay"
+        ).textContent = `₹${totalAmount.toFixed(2)}`;
+        document.querySelector(
+          "#fineBalanceDisplay"
+        ).textContent = `₹${totalFine.toFixed(2)}`;
+      }
+
+      // Ensure Fine Balance is updated before submitting for PDF download
+      function updateFineBalance() {
+        calculateTotal(); // Trigger calculation before submission
+      }
+
+      // Call the function on page load to initialize the values
+      window.onload = calculateTotal;
+    </script>
+  </body>
+</html>

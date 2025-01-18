@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer Management</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h2>Customer Management</h2>
+      <form action="/add" method="POST">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="customerId" class="form-label">Customer ID:</label>
+              <input
+                type="text"
+                class="form-control"
+                id="customerId"
+                name="customerId"
+                required
+              />
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="customerName" class="form-label"
+                >Customer Name:</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="customerName"
+                name="customerName"
+                required
+              />
+            </div>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary">Add Customer</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="table table-striped table-bordered mt-4">
+        <thead>
+          <tr>
+            <th>Customer ID</th>
+            <th>Customer Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% customers.forEach(function(customer, index) { %>
+          <tr>
+            <td><%= customer.customerId %></td>
+            <td>
+              <% if (editIndex !== null && editIndex === index) { %>
+              <form
+                id="editForm-<%= index %>"
+                action="/update/<%= customer.customerId %>"
+                method="POST"
+              >
+                <input
+                  type="text"
+                  name="customerName"
+                  class="form-control"
+                  value="<%= customer.customerName %>"
+                  required
+                />
+              </form>
+              <% } else { %> <%= customer.customerName %> <% } %>
+            </td>
+            <td>
+              <% if (editIndex !== null && editIndex === index) { %>
+              <button form="editForm-<%= index %>" class="btn btn-success">
+                Save
+              </button>
+              <a href="/customer" class="btn btn-secondary">Cancel</a>
+              <% } else { %>
+              <a href="/customer?editIndex=<%= index %>" class="btn btn-warning"
+                >Edit</a
+              >
+              <form
+                action="/delete/<%= customer.customerId %>"
+                method="POST"
+                style="display: inline"
+              >
+                <button type="submit" class="btn btn-danger">Delete</button>
+              </form>
+              <% } %>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      document
+        .querySelector("form")
+        .addEventListener("submit", async function (event) {
+          const customerId = document.getElementById("customerId").value.trim();
+          const customerName = document
+            .getElementById("customerName")
+            .value.trim();
+
+          if (!customerId || !customerName) {
+            event.preventDefault();
+            alert("Both fields are required!");
+            return;
+          }
+
+          if (isNaN(customerId)) {
+            event.preventDefault();
+            alert("Customer ID must be a number!");
+            return;
+          }
+
+          // Check for duplicate ID
+          const response = await fetch(
+            `/validateCustomerId?customerId=${customerId}`
+          );
+          const result = await response.json();
+          if (result.exists) {
+            event.preventDefault();
+            alert("Customer ID already exists! Please choose another.");
+          }
+        });
+    </script>
+  </body>
+</html>
