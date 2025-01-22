@@ -73,7 +73,7 @@
                   class="btn btn-outline-secondary"
                   onclick="togglePasswordVisibility()"
                 >
-                  <i id="toggleIcon" class="bi bi-eye"></i>
+                  <i id="toggleIcon" class="bi bi-eye-slash"></i>
                 </button>
                 <div class="invalid-feedback">Please enter your password.</div>
               </div>
@@ -90,12 +90,12 @@
         const toggleIcon = document.getElementById("toggleIcon");
         if (passwordInput.type === "password") {
           passwordInput.type = "text";
-          toggleIcon.classList.remove("bi-eye");
-          toggleIcon.classList.add("bi-eye-slash");
-        } else {
-          passwordInput.type = "password";
           toggleIcon.classList.remove("bi-eye-slash");
           toggleIcon.classList.add("bi-eye");
+        } else {
+          passwordInput.type = "password";
+          toggleIcon.classList.remove("bi-eye");
+          toggleIcon.classList.add("bi-eye-slash");
         }
       }
 
@@ -116,25 +116,33 @@
                 const username = document.getElementById("username").value;
                 const password = document.getElementById("password").value;
 
-                // Send login request
-                const response = await fetch("/login", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                  },
-                  body: new URLSearchParams({
-                    username: username,
-                    password: password,
-                  }),
-                });
+                try {
+                  // Send login request
+                  const response = await fetch("/login", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams({
+                      username: username,
+                      password: password,
+                    }),
+                  });
 
-                if (response.ok) {
-                  window.location.href = "/"; // Redirect to home page on success
-                } else {
-                  const data = await response.json();
-                  alert(data.message || "Invalid username or password"); // Show error message
+                  const data = await response.json(); // Parse JSON response
+                  if (response.ok) {
+                    window.location.href = "/"; // Redirect on success
+                  } else {
+                    const errorMessage =
+                      data.message || "Invalid username or password";
+                    alert(errorMessage); // Show error alert
+                  }
+                } catch (error) {
+                  console.error("Error during login:", error); // Log unexpected errors
+                  alert("An unexpected error occurred. Please try again.");
                 }
               }
+
               form.classList.add("was-validated");
             },
             false
