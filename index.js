@@ -56,14 +56,17 @@ app.post("/login", (req, res) => {
   const query = "SELECT * FROM users WHERE username = ? AND password = ?";
 
   db.query(query, [username, password], (err, results) => {
-    if (err) throw err;
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
 
     if (results.length > 0) {
       // Store user info in session
       req.session.user = results[0];
-      res.redirect("/");
+      res.json({ message: "Login successful" }); // Send success message
     } else {
-      res.status(401).send("Invalid username or password");
+      res.status(401).json({ message: "Invalid username or password" }); // Send error as JSON
     }
   });
 });
@@ -95,7 +98,9 @@ app.get("/customer", (req, res) => {
   db.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching customers:", err);
-      return res.status(500).send("An error occurred while fetching customers.");
+      return res
+        .status(500)
+        .send("An error occurred while fetching customers.");
     }
     res.render("customer", { customers: results, editIndex }); // Pass editIndex to the EJS template
   });
@@ -103,42 +108,25 @@ app.get("/customer", (req, res) => {
 
 // Route to add a new customer
 app.post("/add", (req, res) => {
-  const { customerId, customerName } = req.body;
+  const { customerName } = req.body;
 
   // Server-side validation for required fields
-  if (!customerId || !customerName) {
-    return res.status(400).send("Customer ID and Customer Name are required.");
+  if (!customerName) {
+    return res.status(400).send("Customer Name is required.");
   }
 
-  // Ensure customerId is numeric
-  if (isNaN(customerId)) {
-    return res.status(400).send("Customer ID must be a number.");
-  }
-
-  // Check for duplicate customerId
-  const checkDuplicateQuery = "SELECT COUNT(*) AS count FROM customers WHERE customerId = ?";
-  db.query(checkDuplicateQuery, [customerId], (err, results) => {
+  // Insert only the customerName; customerId is auto-generated
+  const insertQuery = "INSERT INTO customers (customerName) VALUES (?)";
+  db.query(insertQuery, [customerName], (err) => {
     if (err) {
-      console.error("Error checking for duplicate customerId:", err);
-      return res.status(500).send("An error occurred while validating the customer ID.");
+      console.error("Error adding customer:", err);
+      return res
+        .status(500)
+        .send("An error occurred while adding the customer.");
     }
-
-    if (results[0].count > 0) {
-      return res.status(400).send("Customer ID already exists. Please use a unique ID.");
-    }
-
-    // Proceed with inserting the new customer
-    const insertQuery = "INSERT INTO customers (customerId, customerName) VALUES (?, ?)";
-    db.query(insertQuery, [customerId, customerName], (err) => {
-      if (err) {
-        console.error("Error adding customer:", err);
-        return res.status(500).send("An error occurred while adding the customer.");
-      }
-      res.redirect("/customer");
-    });
+    res.redirect("/customer");
   });
 });
-
 
 app.post("/update/:customerId", (req, res) => {
   const { customerId } = req.params;
@@ -168,7 +156,7 @@ app.post("/delete/:customerId", (req, res) => {
     }
   });
 });
-// Default data
+
 // Default data
 const defaultBillData = {
   items: [
@@ -366,9 +354,11 @@ app.post("/deleteItem/:id", (req, res) => {
 // Render the form and transaction list
 app.get("/add-transaction", (req, res) => {
   const getTransactionsQuery = "SELECT * FROM transactions";
+  const editIndex = req.query.editIndex ? parseInt(req.query.editIndex) : null; // Parse query param if available
   db.query(getTransactionsQuery, (err, results) => {
     if (err) throw err;
-    res.render("transaction", { transactions: results });
+    res.render('transaction', {  transactions: results, editIndex });
+    
   });
 });
 
@@ -427,14 +417,26 @@ app.post("/delete-transaction/:id", (req, res) => {
   });
 });
 
-// Update a transaction
-app.post("/edit-transaction/:id", (req, res) => {
+// Route to display transactions
+app.get("/transactions", (req, res) => {
+  const query = "SELECT * FROM transactions"; // SQL query to fetch all transactions
+  db.query(query, (err, transactions) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Database error while fetching transactions." });
+    }
+    const editIndex = req.query.editIndex ? parseInt(req.query.editIndex, 10) : null;
+    res.render("transaction", { transactions, editIndex });
+  });
+});
+
+app.post('/update-transaction/:id', (req, res) => {
   const { id } = req.params; // Extract transaction ID from URL params
+
+  console.log("Transaction ID:", id); // Debugging log
+  console.log("Received data:", req.body); // Debugging log
+
   const {
-    JamaOrNave,
-    customerName,
-    itemName,
-    netWeight,
     touch,
     wastage,
     mc,
@@ -445,12 +447,18 @@ app.post("/edit-transaction/:id", (req, res) => {
   } = req.body; // Extract updated values from the request body
 
   // Validate required fields
-  if (!id || !JamaOrNave || !customerName || !itemName || !netWeight || !touch || !wastage || !mc || !rate || !tmc) {
+  if (
+    !id ||
+    !touch ||
+    !wastage ||
+    !mc ||
+    !rate ||
+    !tmc
+  ) {
     return res.status(400).json({ error: "Missing required fields." });
   }
 
   // Parse numeric values to ensure they are valid
-  const parsedNetWeight = parseFloat(netWeight) || 0;
   const parsedTouch = parseFloat(touch) || 0;
   const parsedWastage = parseFloat(wastage) || 0;
   const parsedMC = parseFloat(mc) || 0;
@@ -458,19 +466,16 @@ app.post("/edit-transaction/:id", (req, res) => {
   const parsedTMC = parseFloat(tmc) || 0;
 
   // Calculate amount and fine if not provided
-  const calculatedAmount = parsedNetWeight * parsedMC || 0; // Calculate amount
-  const calculatedFine = (parsedNetWeight * (parsedTouch + parsedWastage)) / 100 || 0; // Calculate fine
-  const finalAmount = amount !== undefined ? parseFloat(amount) : calculatedAmount;
+  const calculatedFine =
+    (parsedTouch + parsedWastage) / 100 || 0;
+  const finalAmount =
+    amount !== undefined ? parseFloat(amount) : 0;
   const finalFine = fine !== undefined ? parseFloat(fine) : calculatedFine;
 
-  // SQL query to update the transaction in the database
+  // SQL query to update the transaction in the database, excluding the first 4 columns
   const query = `
     UPDATE transactions
     SET 
-      JamaOrNave = ?,
-      customerName = ?, 
-      itemName = ?, 
-      netWeight = ?, 
       touch = ?, 
       wastage = ?, 
       mc = ?, 
@@ -485,10 +490,6 @@ app.post("/edit-transaction/:id", (req, res) => {
   db.execute(
     query,
     [
-      JamaOrNave,
-      customerName,
-      itemName,
-      parsedNetWeight,
       parsedTouch,
       parsedWastage,
       parsedMC,
@@ -501,57 +502,14 @@ app.post("/edit-transaction/:id", (req, res) => {
     (err) => {
       if (err) {
         console.error("Database error:", err);
-        return res.status(500).json({ error: "Database error." });
+        return res.status(500).json({ error: "Database error while updating the transaction." });
       }
-      res.status(200).json({ message: "Transaction updated successfully." });
+      res.redirect("/transactions"); // Redirect to the transaction list after update
     }
   );
 });
 
-app.get('/transactions/edit/:transactionId', (req, res) => {
-  const transactionId = req.params.transactionId;
 
-  db.query('SELECT * FROM transactions WHERE transactionId = ?', [transactionId], (err, result) => {
-      if (err) {
-          console.error(err);
-          return res.status(500).send('Database Error');
-      }
-
-      if (result.length > 0) {
-          res.render('editTransaction', { transaction: result[0] });
-      } else {
-          res.status(404).send('Transaction not found');
-      }
-  });
-});
-
-app.post('/transactions/update/:transactionId', (req, res) => {
-  const transactionId = req.params.transactionId;
-  const {
-      itemName,
-      netWeight,
-      touch,
-      wastage,
-      mcPercent,
-      rate,
-      amount,
-      fine,
-      tmc,
-  } = req.body;
-
-  db.query(
-      'UPDATE transactions SET itemName = ?, netWeight = ?, touch = ?, wastage = ?, mcPercent = ?, rate = ?, amount = ?, fine = ?, tmc = ? WHERE transactionId = ?',
-      [itemName, netWeight, touch, wastage, mcPercent, rate, amount, fine, tmc, transactionId],
-      (err) => {
-          if (err) {
-              console.error(err);
-              return res.status(500).send('Database Error');
-          }
-
-          res.redirect('/transactions');
-      }
-  );
-});
 
 // Start server
 app.listen(PORT, () => {
