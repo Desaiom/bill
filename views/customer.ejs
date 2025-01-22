@@ -14,19 +14,7 @@
       <h2>Customer Management</h2>
       <form action="/add" method="POST">
         <div class="row">
-          <div class="col-md-4">
-            <div class="mb-3">
-              <label for="customerId" class="form-label">Customer ID:</label>
-              <input
-                type="text"
-                class="form-control"
-                id="customerId"
-                name="customerId"
-                required
-              />
-            </div>
-          </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="mb-3">
               <label for="customerName" class="form-label"
                 >Customer Name:</label
@@ -131,6 +119,16 @@
             alert("Customer ID already exists! Please choose another.");
           }
         });
+      document.addEventListener("DOMContentLoaded", () => {
+        // Replace current history entry with the homepage
+        const homepageURL = "/";
+        history.replaceState(null, "", homepageURL);
+
+        // Detect back navigation
+        window.addEventListener("popstate", () => {
+          window.location.href = homepageURL;
+        });
+      });
     </script>
   </body>
 </html>
